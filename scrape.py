@@ -33,6 +33,12 @@ try:
         # Open the main page
         driver.get(url)
 
+        # Parse the hospital info
+        page_source = driver.page_source
+
+        soup = BeautifulSoup(page_source, 'html.parser')
+        hospital = soup.find('a', id = link_id).text
+
         # Wait until the link is clickable and click it
         wait = WebDriverWait(driver, 2)
         link_element = wait.until(EC.element_to_be_clickable((By.ID, link_id)))
@@ -46,20 +52,17 @@ try:
 
         # Use BeautifulSoup to parse the new page's source
         soup = BeautifulSoup(page_source, 'html.parser')
-        # hospital_content = soup.find('div', id = hospital_id)
         doctors_content = soup.find('div', id=doctor_id)
         table_rows = doctors_content.find_all('tr', style="color:#003399;background-color:White;")
+        
         # Open a CSV file to write the data
         with open('output.csv','a') as file:
             writer = csv.writer(file)
             
-            # Write the header row
-            # writer.writerow(['STT', 'Họ tên', 'Vai trò', 'Quốc tịch', 'Số chứng chỉ', 'Phạm vi hành nghề', 'Ngày làm việc', 'Thời gian làm việc', 'ID'])
-
             for row in table_rows:
                 # print(row.prettify())
                 columns = row.find_all('td')
-                row_data = []
+                row_data = [hospital]
                 for column in columns:
                     if column.find('a'):
                         a_content = column.find('a').get_text(strip=True)
@@ -76,7 +79,6 @@ try:
                             row_data.append(a_content)
                     else:
                         row_data.append(column.get_text(strip=True))
-                print(row_data)
                 writer.writerow(row_data)
 finally:
     driver.quit()
