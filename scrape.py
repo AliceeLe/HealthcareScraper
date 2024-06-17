@@ -40,72 +40,63 @@ doctor_id = "dnn_ctr422_TimKiemGPHD_UpdatePanel1"
 driver = webdriver.Chrome()
 
 try:
-    for page_id in page_ids:
+    for link_id in link_ids:
         # Open the main page
         driver.get(url)
 
         wait = WebDriverWait(driver, 2)
-        link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
+        link_element = wait.until(EC.element_to_be_clickable((By.ID, page_ids[1])))
         link_element.click()
 
-        for link_id in link_ids:
-            driver.get(url)
+        # Parse the hospital info
+        page_source = driver.page_source
 
-            # Parse the hospital info
-            page_source = driver.page_source
+        soup = BeautifulSoup(page_source, 'html.parser')
+        hospital = soup.find('a', id = link_id).text
 
-            soup = BeautifulSoup(page_source, 'html.parser')
-            hospital = soup.find('a', id = link_id).text
+        # Wait until the link is clickable and click it
+        wait = WebDriverWait(driver, 2)
+        link_element = wait.until(EC.element_to_be_clickable((By.ID, link_id)))
+        link_element.click()
 
-            # Wait until the link is clickable and click it
-            wait = WebDriverWait(driver, 2)
-            try:
-                link_element = wait.until(EC.element_to_be_clickable((By.ID, link_id)))
-                link_element.click()
+        # Wait for the new page to load
+        time.sleep(1)  # You may need to adjust this sleep time depending on the page load speed
 
-                # Wait for the new page to load
-                time.sleep(1)  # You may need to adjust this sleep time depending on the page load speed
+        # Now scrape the information from the new page
+        page_source = driver.page_source
 
-                # Now scrape the information from the new page
-                page_source = driver.page_source
+        # Use BeautifulSoup to parse the new page's source
+        soup = BeautifulSoup(page_source, 'html.parser')
+        doctors_content = soup.find('div', id=doctor_id)
+        table_rows = doctors_content.find_all('tr', style="color:#003399;background-color:White;")
 
-                # Use BeautifulSoup to parse the new page's source
-                soup = BeautifulSoup(page_source, 'html.parser')
-                doctors_content = soup.find('div', id=doctor_id)
-                table_rows = doctors_content.find_all('tr', style="color:#003399;background-color:White;")
-
-                # Open a CSV file to write the data
-                with open('output.csv','a') as file:
-                    writer = csv.writer(file)
-                    
-                    for row in table_rows:
-                        # print(row.prettify())
-                        columns = row.find_all('td')
-                        row_data = [hospital]
-                        for column in columns:
-                            if column.find('a'):
-                                a_content = column.find('a').get_text(strip=True)
-                                index = a_content.find('\n')
-                                if index != -1:  # If '\n' is found
-                                    name = a_content[0:index]  # Extract and strip the name
-                                    role = a_content[index+1:]  # Extract and strip the role
-                                    row_data.append(name)
-                                    role_index= role.find(next(filter(str.isalpha, role)))
-                                    role_filtered = role[role_index:]
-                                    new_role = role_filtered.replace('\n', '')  
-                                    row_data.append(new_role)
-                                else: # If no \n
-                                    row_data.append(a_content)
-                            else:
-                                row_data.append(column.get_text(strip=True))
-                        writer.writerow(row_data)
-
-                
-            except TimeoutException:
-                # Handle the case when element is not found within timeout
-                print(f"Element with ID '{link_id}' was not found within 2 seconds.")
-
+        # Open a CSV file to write the data
+        with open('output.csv','a') as file:
+            writer = csv.writer(file)
+            
+            for row in table_rows:
+                # print(row.prettify())
+                columns = row.find_all('td')
+                row_data = [hospital]
+                for column in columns:
+                    if column.find('a'):
+                        a_content = column.find('a').get_text(strip=True)
+                        index = a_content.find('\n')
+                        if index != -1:  # If '\n' is found
+                            name = a_content[0:index]  # Extract and strip the name
+                            role = a_content[index+1:]  # Extract and strip the role
+                            row_data.append(name)
+                            role_index= role.find(next(filter(str.isalpha, role)))
+                            role_filtered = role[role_index:]
+                            new_role = role_filtered.replace('\n', '')  
+                            row_data.append(new_role)
+                        else: # If no \n
+                            row_data.append(a_content)
+                    else:
+                        row_data.append(column.get_text(strip=True))
+                writer.writerow(row_data)
+except TimeoutException:
+    print(f"Element with ID '{link_id}' was not found within 2 seconds.")
 finally:
     driver.quit()
-
 
