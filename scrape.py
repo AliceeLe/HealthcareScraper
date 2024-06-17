@@ -8,7 +8,7 @@ import time
 import csv
 
 url = 'http://thongtin.medinet.org.vn/Gi%E1%BA%A5y-ph%C3%A9p-ho%E1%BA%A1t-%C4%91%E1%BB%99ng'
-counter = 0
+
 # IDs for elements
 page_ids = [
 "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1",
@@ -19,41 +19,29 @@ page_ids = [
 "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_6",
 ]
 
-hospital_ids = ["dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_0", 
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_1", 
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_2", 
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_3",
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_4", 
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_5", 
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_6",
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_7",
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_8",
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_9",
-]
-
-link_ids = ["dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_0", 
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_1", 
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_2", 
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_3",
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_4", 
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_5", 
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_6",
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_7",
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_8",
-"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_9",
-]
+link_dict = {
+    "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_0":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_0",
+    "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_1":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_1",
+    "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_2":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_2",
+    "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_3":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_3",
+    "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_4":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_4",
+    "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_5":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_5",
+    "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_6":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_6",
+    "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_7":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_7",
+    "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_8":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_8",
+    "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_9":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_9",
+}
 
 # button 6 --> 925
 
-list_id = "chkDSNhanSu"
 doctor_id = "dnn_ctr422_TimKiemGPHD_UpdatePanel1"
+
+driver = webdriver.Chrome()
 
 # do while 
 def scrape_links(page_id:str):
-    driver = webdriver.Chrome()
     try:
-        for i in range(len(link_ids)):
-            # Open the main page
+        for hospital_id, link_id in link_dict.items():
             driver.get(url)
 
             if page_id != "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1":
@@ -65,11 +53,16 @@ def scrape_links(page_id:str):
             page_source = driver.page_source
 
             soup = BeautifulSoup(page_source, 'html.parser')
-            hospital = soup.find('a', id = hospital_ids[i]).text
+            hospital = soup.find('a', id = hospital_id).text
 
             # Wait until the link is clickable and click it
             wait = WebDriverWait(driver, 8)
-            link_element = wait.until(EC.element_to_be_clickable((By.ID, link_ids[i])))
+
+            ## CODE IF HOSPITAL_ID IS NOT THERE, USE LINK_ID
+            try:
+                link_element = wait.until(EC.element_to_be_clickable((By.ID, hospital_id)))
+            except: 
+                link_element = wait.until(EC.element_to_be_clickable((By.ID, link_id)))
             link_element.click()
 
             # Wait for the new page to load
@@ -90,7 +83,7 @@ def scrape_links(page_id:str):
                 for row in table_rows:
                     # print(row.prettify())
                     columns = row.find_all('td')
-                    row_data = [hospital]
+                    row_data = [page_id[-1], hospital_id[-1], hospital]
                     for column in columns:
                         if column.find('a'):
                             a_content = column.find('a').get_text(strip=True)
@@ -108,10 +101,10 @@ def scrape_links(page_id:str):
                         else:
                             row_data.append(column.get_text(strip=True))
                     writer.writerow(row_data)
-                print(f"Finish row {link_ids[i]}'") 
+                print(f"Finish row {link_id}'") 
 
     except TimeoutException:
-        print(f"Element with ID '{link_ids[i]}' was not found within 10 seconds.")
+        print(f"Element with ID '{link_id}' was not found within 10 seconds.")
         pass
     finally:
         # driver.quit()
@@ -119,4 +112,6 @@ def scrape_links(page_id:str):
 
 for page_id in page_ids:
     scrape_links(page_id)
+
+
 
