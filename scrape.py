@@ -32,31 +32,73 @@ link_dict = {
     "dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_9":"dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_9",
 }
 
-# button 6 --> 925
-
 doctor_id = "dnn_ctr422_TimKiemGPHD_UpdatePanel1"
+
+def clean_name_role(a_content: str, row_data: list[str]):
+    index = a_content.find('\n')
+    if index != -1:  # If '\n' is found
+        name = a_content[0:index]  # Extract and strip the name
+        role = a_content[index+1:]  # Extract and strip the role
+        row_data.append(name)
+        role_index= role.find(next(filter(str.isalpha, role)))
+        role_filtered = role[role_index:]
+        new_role = role_filtered.replace('\n', '')  
+        row_data.append(new_role)
+    else: # If no \n
+        row_data.append(a_content)
+
+def clean_data(row, button_num: int, hospital_id: str, hospital: str):
+    columns = row.find_all('td')
+    row_data = [button_num, hospital_id[-1], hospital]
+    for column in columns:
+        if column.find('a'):
+            a_content = column.find('a').get_text(strip=True)
+            clean_name_role(a_content, row_data)
+        else:
+            row_data.append(column.get_text(strip=True))
+    return row_data
+
+def scrape_table(page_source: str, button_num: int, link_id: str, hospital_id: str, hospital: str):
+    try:
+        # Use BeautifulSoup to parse the new page's source
+        soup = BeautifulSoup(page_source, 'html.parser')
+        doctors_content = soup.find('div', id=doctor_id)        
+        table_rows = doctors_content.find_all('tr', style="color:#003399;background-color:White;")
+
+        # Open a CSV file to write the data
+        with open('output.csv','a') as file:
+            writer = csv.writer(file)
+                    
+            for row in table_rows:
+                row_data = clean_data(row, button_num, hospital_id, hospital)
+                writer.writerow(row_data)
+        print(f"Finish row {link_id}'") 
+    except Exception as error:
+        print("An exception occurred:", error) 
 
 driver = webdriver.Chrome()
 
-# do while 
-def scrape_links(page_id:str):
+def scrape_links(page_id:str, button_num:int, n: int):
     try:
         for hospital_id, link_id in link_dict.items():
             driver.get(url)
+            wait = WebDriverWait(driver, 5)
 
             if page_id != "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1":
-                wait = WebDriverWait(driver, 8)
                 link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
                 link_element.click()
+            elif page_id == "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7":
+                for i in range(n+1):
+                    link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
+                    link_element.click()
+                    page_source = driver.page_source
 
             # Parse the hospital info
             page_source = driver.page_source
 
             soup = BeautifulSoup(page_source, 'html.parser')
             hospital = soup.find('a', id = hospital_id).text
-
-            # Wait until the link is clickable and click it
-            wait = WebDriverWait(driver, 8)
+            print(hospital)
 
             ## CODE IF HOSPITAL_ID IS NOT THERE, USE LINK_ID
             try:
@@ -66,52 +108,24 @@ def scrape_links(page_id:str):
             link_element.click()
 
             # Wait for the new page to load
-            time.sleep(3)  # You may need to adjust this sleep time depending on the page load speed
+            time.sleep(2)  
 
             # Now scrape the information from the new page
             page_source = driver.page_source
-
-            # Use BeautifulSoup to parse the new page's source
-            soup = BeautifulSoup(page_source, 'html.parser')
-            doctors_content = soup.find('div', id=doctor_id)
-            table_rows = doctors_content.find_all('tr', style="color:#003399;background-color:White;")
-
-            # Open a CSV file to write the data
-            with open('output.csv','a') as file:
-                writer = csv.writer(file)
+            scrape_table(page_source, button_num, link_id, hospital_id, hospital)
                 
-                for row in table_rows:
-                    # print(row.prettify())
-                    columns = row.find_all('td')
-                    row_data = [page_id[-1], hospital_id[-1], hospital]
-                    for column in columns:
-                        if column.find('a'):
-                            a_content = column.find('a').get_text(strip=True)
-                            index = a_content.find('\n')
-                            if index != -1:  # If '\n' is found
-                                name = a_content[0:index]  # Extract and strip the name
-                                role = a_content[index+1:]  # Extract and strip the role
-                                row_data.append(name)
-                                role_index= role.find(next(filter(str.isalpha, role)))
-                                role_filtered = role[role_index:]
-                                new_role = role_filtered.replace('\n', '')  
-                                row_data.append(new_role)
-                            else: # If no \n
-                                row_data.append(a_content)
-                        else:
-                            row_data.append(column.get_text(strip=True))
-                    writer.writerow(row_data)
-                print(f"Finish row {link_id}'") 
-
     except TimeoutException:
         print(f"Element with ID '{link_id}' was not found within 10 seconds.")
         pass
+
     finally:
-        # driver.quit()
+        if page_id == "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7":
+            page_id = page_id[:-1]+str(7+n)
         print(f"DONE BUTTON {page_id}'") 
 
+
 for page_id in page_ids:
-    scrape_links(page_id)
+    scrape_links(page_id, int(page_id[-1]), 0)
 
-
-
+for i in range(2):
+    scrape_links("dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7", 7+i, i)
