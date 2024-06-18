@@ -84,14 +84,14 @@ def scrape_links(page_id:str, button_num:int, n: int):
             driver.get(url)
             wait = WebDriverWait(driver, 5)
 
-            if page_id != "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1":
-                link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
-                link_element.click()
-            elif page_id == "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7":
+            if page_id == "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7":
                 for i in range(n+1):
                     link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
                     link_element.click()
-                    page_source = driver.page_source
+                    time.sleep(1)  
+            elif page_id != "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1":
+                link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
+                link_element.click()
 
             # Parse the hospital info
             page_source = driver.page_source
@@ -127,5 +127,5 @@ def scrape_links(page_id:str, button_num:int, n: int):
 for page_id in page_ids:
     scrape_links(page_id, int(page_id[-1]), 0)
 
-for i in range(2):
+for i in range(3):
     scrape_links("dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7", 7+i, i)
