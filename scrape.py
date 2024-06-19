@@ -33,6 +33,13 @@ link_dict = {
 }
 
 doctor_id = "dnn_ctr422_TimKiemGPHD_UpdatePanel1"
+inner_button_ids = {
+    "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_2",
+    "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_3",
+    "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_4",
+    "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_5",
+    "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_6",
+}
 
 def clean_name_role(a_content: str, row_data: list[str]):
     index = a_content.find('\n')
@@ -58,6 +65,7 @@ def clean_data(row, button_num: int, hospital_id: str, hospital: str):
             row_data.append(column.get_text(strip=True))
     return row_data
 
+table_id = 'dnn_ctr422_TimKiemGPHD_grvGPHN'
 def scrape_table(page_source: str, button_num: int, link_id: str, hospital_id: str, hospital: str):
     try:
         # Use BeautifulSoup to parse the new page's source
@@ -78,41 +86,80 @@ def scrape_table(page_source: str, button_num: int, link_id: str, hospital_id: s
 
 driver = webdriver.Chrome()
 
+def locate_table(page_id:str, button_num:int):
+    page_source = driver.page_source
+    soup = BeautifulSoup(page_source, 'html.parser')
+    table_content = soup.find('table', id=table_id)
+
+    row_data = []
+    license_data = []
+    rows =   table_content.find_all('tr')
+    for row in rows:
+        columns = row.find_all('td')
+        column_data = []
+        for column in columns:
+            if column.find('a'):
+                a_content = column.find('a').get_text(strip=True)
+                column_data.append(a_content)
+            else:
+                column_data.append(column.get_text(strip=True))
+        
+        if len(column_data) > 0: 
+            license_data.append(column_data[2])
+            row_data.append(column_data[0])
+            row_data.append(column_data[1])
+            row_data.append(column_data[3])
+    table_dict = {0: license_data, 1: row_data}
+    return table_dict
+
+
+"""
+Bam vao tung button. Sau do thi store array cua so giay phep. Search so giay phep va scrape 
+info thay vi bam 50 button.
+Write function bam nut cuoi cung thay vi la bam nut 7 lien tuc 
+"""
+
 def scrape_links(page_id:str, button_num:int, n: int):
     try:
-        for hospital_id, link_id in link_dict.items():
+        # for hospital_id, link_id in link_dict.items():
             driver.get(url)
-            wait = WebDriverWait(driver, 5)
+            wait = WebDriverWait(driver, 3)
+            table_dict = locate_table(page_id, button_num)  
+            license_data = table_dict.get(0)
+            row_data = table_dict.get(1)
+            print(license_data)
 
-            if page_id == "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7":
-                for i in range(n+1):
-                    link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
-                    link_element.click()
-                    time.sleep(1)  
-            elif page_id != "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1":
-                link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
-                link_element.click()
 
-            # Parse the hospital info
-            page_source = driver.page_source
+            # if page_id == "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7":
+            #     for i in range(n+1):
+            #         link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
+            #         link_element.click()
+            #         time.sleep(1)  
+            # elif page_id != "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1":
+            #     link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
+            #     link_element.click()
 
-            soup = BeautifulSoup(page_source, 'html.parser')
-            hospital = soup.find('a', id = hospital_id).text
-            print(hospital)
+            # FROM HERE 
+            # # Parse the hospital info
+            # page_source = driver.page_source
 
-            ## CODE IF HOSPITAL_ID IS NOT THERE, USE LINK_ID
-            try:
-                link_element = wait.until(EC.element_to_be_clickable((By.ID, hospital_id)))
-            except: 
-                link_element = wait.until(EC.element_to_be_clickable((By.ID, link_id)))
-            link_element.click()
+            # soup = BeautifulSoup(page_source, 'html.parser')
+            # hospital = soup.find('a', id = hospital_id).text
+            # print(hospital)
 
-            # Wait for the new page to load
-            time.sleep(2)  
+            # ## CODE IF HOSPITAL_ID IS NOT THERE, USE LINK_ID
+            # try:
+            #     link_element = wait.until(EC.element_to_be_clickable((By.ID, hospital_id)))
+            # except: 
+            #     link_element = wait.until(EC.element_to_be_clickable((By.ID, link_id)))
+            # link_element.click()
 
-            # Now scrape the information from the new page
-            page_source = driver.page_source
-            scrape_table(page_source, button_num, link_id, hospital_id, hospital)
+            # # Wait for the new page to load
+            # time.sleep(2)  
+
+            # # Now scrape the information from the new page
+            # page_source = driver.page_source
+            # scrape_table(page_source, button_num, link_id, hospital_id, hospital)
                 
     except TimeoutException:
         print(f"Element with ID '{link_id}' was not found within 10 seconds.")
@@ -124,8 +171,8 @@ def scrape_links(page_id:str, button_num:int, n: int):
         print(f"DONE BUTTON {page_id}'") 
 
 
-for page_id in page_ids:
-    scrape_links(page_id, int(page_id[-1]), 0)
+# for page_id in page_ids:
+scrape_links("dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1", int("dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1"[-1]), 0)
 
-for i in range(3):
-    scrape_links("dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7", 7+i, i)
+# for i in range(13, 20):
+#     scrape_links("dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7", 7+i, i)
