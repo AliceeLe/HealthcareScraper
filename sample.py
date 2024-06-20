@@ -184,4 +184,42 @@ def scrape_links_alternative(page_id: str, n: int):
         print(f"Element was not found within 10 seconds.")
         pass
 
-scrape_links_alternative("dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1", 1)
+def scrape_license_page(n: int):
+    try:
+        driver.get(url)
+        wait = WebDriverWait(driver, 3)
+       ## Locate button  
+        page_id = locate_button(n)
+        table_dict = locate_table(page_id)  
+        
+        # Writing license dictionary to license.csv
+        for key, value in table_dict.items():
+            with open("license.csv", "a") as outfile:
+                writer = csv.writer(outfile)
+                writer.writerow([key, value])
+
+    except TimeoutException:
+        print(f"Element was not found within 10 seconds.")
+        pass
+
+def scrape_license_parallel(num_pages):
+    if __name__ == '__main__':         
+        # Generate a list of page numbers from 1 to num_pages
+        page_numbers = list(range(1, num_pages + 1))
+        
+        # Create a pool with a specified number of processes
+        pool = multiprocessing.Pool(processes=4)
+        
+        # Map the scrape_page function to the page_numbers list
+        pool.map(scrape_license_page, page_numbers)
+        
+        # Close the pool and wait for the work to finish
+        pool.close()
+        pool.join()
+        
+        # Print completion message
+        print(f"Scraping completed for pages 1 to {num_pages}")
+
+
+
+scrape_license_parallel(10)
