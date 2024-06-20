@@ -3,6 +3,7 @@ import multiprocessing
 import time
 import csv
 import ast
+import math
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -85,9 +86,8 @@ def locate_table(page_id: str, driver):
             row_data.append(column_data[0])
             row_data.append(column_data[1])
             row_data.append(column_data[3])
-            table_dict[license] = row_data
-            
-    print(table_dict)
+            table_dict[license] = row_data            
+
     return table_dict
 
 def locate_button(n, driver):
@@ -100,8 +100,17 @@ def locate_button(n, driver):
             link_element.click()
     else:
         # Write the algorithm here
-        pass
-        
+        x = n-5
+        button_11_pressed = math.floor(x/5)
+        last_button = (x%5)+5
+        for i in range(button_11_pressed):
+            link_element = wait.until(EC.element_to_be_clickable((By.ID, "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_11")))
+            link_element.click()
+            time.sleep(1) 
+        last_page_id =  template_page_id + str(last_button)
+        link_element = wait.until(EC.element_to_be_clickable((By.ID, last_page_id)))
+        link_element.click()
+
 
 def search_from_license(key, value):
     driver = webdriver.Chrome()
@@ -182,6 +191,6 @@ def process_license_dict_in_parallel(license_dict, num_processes=4):
             print("License dictionary is empty or not loaded properly.")
 
 if __name__ == '__main__':
-    scrape_license_parallel(10)
-    license_dict = license_to_dict()
-    process_license_dict_in_parallel(license_dict)
+    scrape_license_parallel(25)
+    # license_dict = license_to_dict()
+    # process_license_dict_in_parallel(license_dict)
