@@ -13,6 +13,9 @@ info thay vi bam 50 button.
 Remaining: 
 - Write function bam nut cuoi cung thay vi la bam nut 7 lien tuc 
 - Bam nut ben trong tung trang neu so bac si > 100
+
+Bug:
+- If hospital doesnt have doctors, info will be taken from the old hospital 
 """
 
 url = 'http://thongtin.medinet.org.vn/Gi%E1%BA%A5y-ph%C3%A9p-ho%E1%BA%A1t-%C4%91%E1%BB%99ng'
@@ -22,7 +25,7 @@ table_id = 'dnn_ctr422_TimKiemGPHD_grvGPHN'
 input_search_id = 'dnn_ctr422_TimKiemGPHD_txtSoGiayPhepSearch'
 button_search_id = 'dnn_ctr422_TimKiemGPHD_btnSearchGPHN'
 hospital_id = 'dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_0'
-license_id = 'dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_0'
+license_click_id = 'dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_0'
 doctor_id = "dnn_ctr422_TimKiemGPHD_UpdatePanel1"
 
 def clean_name_role(a_content: str, row_data: list[str]):
@@ -38,32 +41,32 @@ def clean_name_role(a_content: str, row_data: list[str]):
     else: # If no \n
         row_data.append(a_content)
 
-def clean_data(row, row_data):
+def process_row(row, row_data):
     columns = row.find_all('td')
+    row_data = row_data[:4]
     for column in columns:
         if column.find('a'):
             a_content = column.find('a').get_text(strip=True)
             clean_name_role(a_content, row_data)
         else:
             row_data.append(column.get_text(strip=True))
-    return row_data
+    with open('output.csv','a') as file:
+        writer = csv.writer(file)
+        print(row_data)
+        writer.writerow(row_data)
+
 
 
 def scrape_table(page_source: str, row_data: list[str]):
     try:
         # Use BeautifulSoup to parse the new page's source
         soup = BeautifulSoup(page_source, 'html.parser')
-        doctors_content = soup.find('div', id=doctor_id)        
+        doctors_content = soup.find('div', id=doctor_id)    
         table_rows = doctors_content.find_all('tr', style="color:#003399;background-color:White;")
 
-        # Open a CSV file to write the data
-        with open('output.csv','a') as file:
-            writer = csv.writer(file)
-                    
-            for row in table_rows:
-                row_data = clean_data(row, row_data)
-                writer.writerow(row_data)
-        print(f"Finish row {row_data[0]}'") 
+        for row in table_rows:
+            process_row(row, row_data)
+
     except Exception as error:
         print("An exception occurred:", error) 
 
@@ -73,7 +76,6 @@ def locate_table(page_id:str):
     table_content = soup.find('table', id=table_id)
 
     row_data = []
-    license_data = []
     table_dict = {}
     rows =   table_content.find_all('tr')
     for row in rows:
@@ -87,12 +89,17 @@ def locate_table(page_id:str):
                 column_data.append(column.get_text(strip=True))
         
         if len(column_data) > 0: 
-            license_data.append(column_data[2])
+            # clean license string if len > 14
+            license = column_data[2]
+            if len(license) > 14:
+                license = license[:14]
+            elif len(license) < 14:
+                continue
             row_data = []
             row_data.append(column_data[0])
             row_data.append(column_data[1])
             row_data.append(column_data[3])
-            table_dict[column_data[2]] = row_data
+            table_dict[license] = row_data
             
     print(table_dict)
     return table_dict
@@ -131,19 +138,12 @@ def search_from_license(license_id, driver, wait, table_dict, page_num):
     try:
         link_element = wait.until(EC.element_to_be_clickable((By.ID, hospital_id)))
     except: 
-        link_element = wait.until(EC.element_to_be_clickable((By.ID, license_id)))
+        link_element = wait.until(EC.element_to_be_clickable((By.ID, license_click_id)))
     link_element.click()
     time.sleep(2)  
     page_source = driver.page_source 
     scrape_table(page_source, row_data)
 
-def filter_license_data(license_data):
-    res = []
-    ## Filter: Possibly clean 00002/SYT-GPHĐ - Mã số DN/Đơn vị phụ thuộc của DN hoặc số GCN ĐKKD: 0310773264
-    for data in license_data:
-        if len(data) == 14:
-            res.append(data)
-    return res
 
 def scrape_links_alternative(page_id: str, n: int):
     try:
@@ -158,10 +158,6 @@ def scrape_links_alternative(page_id: str, n: int):
         row_data = table_dict.values()
         print(license_data)
         print(row_data)
-
-        license_data = filter_license_data(license_data)
-        print("___________")
-        print(license_data)
 
         ## From license_data, search 
         for license in license_data:
