@@ -8,6 +8,8 @@ import time
 import csv
 import json
 import multiprocessing 
+import pandas as pd
+import ast
 
 """
 Bam vao tung button. Sau do thi store array cua so giay phep. Search so giay phep va scrape 
@@ -43,9 +45,9 @@ def clean_name_role(a_content: str, row_data: list[str]):
     else: # If no \n
         row_data.append(a_content)
 
-def process_row(row, row_data):
+def process_row(row, hospital_info):
     columns = row.find_all('td')
-    row_data = row_data[:4]
+    row_data = ast.literal_eval(hospital_info)
     for column in columns:
         if column.find('a'):
             a_content = column.find('a').get_text(strip=True)
@@ -54,10 +56,9 @@ def process_row(row, row_data):
             row_data.append(column.get_text(strip=True))
     with open('output.csv','a') as file:
         writer = csv.writer(file)
-        print(row_data)
         writer.writerow(row_data)
 
-def scrape_table(page_source, row_data: list[str]):
+def scrape_table(page_source: str, hospital_info: str) -> None :
     try:
         # Use BeautifulSoup to parse the new page's source
         # BUG FROM 64-66
@@ -66,7 +67,7 @@ def scrape_table(page_source, row_data: list[str]):
         table_rows = doctors_content.find_all('tr', style="color:#003399;background-color:White;")
 
         for row in table_rows:
-            process_row(row, row_data)
+            process_row(row, hospital_info)
 
     except Exception as error:
         print("An exception occurred:", error) 
@@ -120,13 +121,16 @@ def locate_button(n):
         pass
         # Write the algorithm here
 
-    if page_id == "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7":
-        for i in range(n+1):
-            link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
-            link_element.click()
-            time.sleep(1)  
+    # if page_id == "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7":
+    #     for i in range(n+1):
+    #         link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
+    #         link_element.click()
+    #         time.sleep(1)  
 
-def search_from_license(license_id, driver, wait, table_dict, page_num):
+def search_from_license(license_id, hospital_info):
+    driver.get(url)
+    wait = WebDriverWait(driver, 3)
+
     print("-------")
     print(license_id)
     # Locate the input field (by ID, name, or other selector)
@@ -141,10 +145,6 @@ def search_from_license(license_id, driver, wait, table_dict, page_num):
     page_source = driver.page_source
     soup = BeautifulSoup(page_source, 'html.parser')
 
-    row_data = table_dict.get(license_id)
-    row_data.insert(0, page_num)
-    print(row_data)
-
     try:
         link_element = wait.until(EC.element_to_be_clickable((By.ID, hospital_id)))
     except: 
@@ -152,9 +152,10 @@ def search_from_license(license_id, driver, wait, table_dict, page_num):
     link_element.click()
     time.sleep(2)  
     page_source = driver.page_source 
-    scrape_table(page_source, row_data)
+    scrape_table(page_source, hospital_info)
+    driver.close()
 
-    
+# From ID to search 
 def scrape_links_alternative(page_id: str, n: int):
     try:
         driver.get(url)
@@ -188,7 +189,7 @@ def scrape_license_page(n: int):
     try:
         driver.get(url)
         wait = WebDriverWait(driver, 3)
-       ## Locate button  
+        ## Locate button  
         page_id = locate_button(n)
         table_dict = locate_table(page_id)  
         
@@ -197,6 +198,7 @@ def scrape_license_page(n: int):
             with open("license.csv", "a") as outfile:
                 writer = csv.writer(outfile)
                 writer.writerow([key, value])
+        driver.close()
 
     except TimeoutException:
         print(f"Element was not found within 10 seconds.")
@@ -220,6 +222,35 @@ def scrape_license_parallel(num_pages):
         # Print completion message
         print(f"Scraping completed for pages 1 to {num_pages}")
 
+def license_to_dict():
+    try:
+        df = pd.read_csv("license.csv")
+        key_value_dict = pd.Series(df.iloc[:, 1].values, index=df.iloc[:, 0]).to_dict()
+        return key_value_dict
+    
+    except FileNotFoundError:
+        print(f"The file was not found.")
+    except pd.errors.EmptyDataError:
+        print("No data in the CSV file.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
+def process_key_value_pair(pair):
+    key, value = pair
+    search_from_license(key, value)
+
+def process_license_dict_in_parallel(license_dict, num_processes=4):
+    if __name__ == '__main__':
+        if license_dict:
+            # Create a pool with a specified number of processes
+            with multiprocessing.Pool(processes=num_processes) as pool:
+                # Map the process_key_value_pair function to each key-value pair in the dictionary
+                pool.map(process_key_value_pair, license_dict.items())
+            # Print completion message
+            print("Processing completed for all key-value pairs.")
+        else:
+            print("License dictionary is empty or not loaded properly.")
 
 scrape_license_parallel(10)
+license_dict = license_to_dict()
+process_license_dict_in_parallel(license_dict)
