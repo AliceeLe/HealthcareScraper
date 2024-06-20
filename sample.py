@@ -41,6 +41,7 @@ def process_row(row, hospital_info):
             clean_name_role(a_content, row_data)
         else:
             row_data.append(column.get_text(strip=True))
+    # if row_data[3] > 100: turn page 
     with open('output.csv', 'a') as file:
         writer = csv.writer(file)
         writer.writerow(row_data)
@@ -102,7 +103,17 @@ def locate_button(n, driver):
         # Write the algorithm here
         x = n-5
         button_11_pressed = math.floor(x/5)
-        last_button = (x%5)+5
+        if n <= 926:
+            last_button = (x%5)+5
+        elif n == 930:
+            last_button = 11
+        else:
+            last_button = (x%5)+6
+
+        if (x % 5 == 0) and n!= 930:
+            button_11_pressed-=1
+            last_button+=5
+
         for i in range(button_11_pressed):
             link_element = wait.until(EC.element_to_be_clickable((By.ID, "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_11")))
             link_element.click()
