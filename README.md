@@ -13,6 +13,11 @@ A virtual environment has been set up. To run the virtual environment, use the f
 .\myenv\Scripts\activate
 ```
 
+or for Mac
+```
+source myenv/bin/activate
+```
+
 Then, use this command to run the code 
 ```
 python scrape.py
