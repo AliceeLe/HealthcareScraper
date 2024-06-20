@@ -6,6 +6,8 @@ from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
 import time
 import csv
+import json
+import multiprocessing 
 
 """
 Bam vao tung button. Sau do thi store array cua so giay phep. Search so giay phep va scrape 
@@ -55,11 +57,10 @@ def process_row(row, row_data):
         print(row_data)
         writer.writerow(row_data)
 
-
-
-def scrape_table(page_source: str, row_data: list[str]):
+def scrape_table(page_source, row_data: list[str]):
     try:
         # Use BeautifulSoup to parse the new page's source
+        # BUG FROM 64-66
         soup = BeautifulSoup(page_source, 'html.parser')
         doctors_content = soup.find('div', id=doctor_id)    
         table_rows = doctors_content.find_all('tr', style="color:#003399;background-color:White;")
@@ -105,16 +106,25 @@ def locate_table(page_id:str):
     return table_dict
 
 # Fix this 
-def locate_button(page_id, n):
+def locate_button(n):
     wait = WebDriverWait(driver, 3)
+
+    template_page_id = 'dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_'
+    if n <= 11:
+        page_id = template_page_id+str(n)
+        if page_id != "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1":
+            link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
+            link_element.click()
+    # next pages 
+    else:
+        pass
+        # Write the algorithm here
+
     if page_id == "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_7":
         for i in range(n+1):
             link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
             link_element.click()
             time.sleep(1)  
-    elif page_id != "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1":
-        link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
-        link_element.click()
 
 def search_from_license(license_id, driver, wait, table_dict, page_num):
     print("-------")
@@ -144,7 +154,7 @@ def search_from_license(license_id, driver, wait, table_dict, page_num):
     page_source = driver.page_source 
     scrape_table(page_source, row_data)
 
-
+    
 def scrape_links_alternative(page_id: str, n: int):
     try:
         driver.get(url)
@@ -154,10 +164,17 @@ def scrape_links_alternative(page_id: str, n: int):
         locate_button(page_id, n)
 
         table_dict = locate_table(page_id)  
-        license_data = table_dict.keys()
-        row_data = table_dict.values()
+        license_data = list(table_dict.keys())
+        row_data = list(table_dict.values())
         print(license_data)
         print(row_data)
+        
+        # Writing dictionary to license.csv
+        for key, value in table_dict.items():
+            with open("license.csv", "a") as outfile:
+                writer = csv.writer(outfile)
+                # row_data = [key, value]
+                writer.writerow([key, value])
 
         ## From license_data, search 
         for license in license_data:
