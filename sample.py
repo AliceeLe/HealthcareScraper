@@ -10,6 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
+from locate_button import compute_button
 
 url = 'http://thongtin.medinet.org.vn/Gi%E1%BA%A5y-ph%C3%A9p-ho%E1%BA%A1t-%C4%91%E1%BB%99ng'
 table_id = 'dnn_ctr422_TimKiemGPHD_grvGPHN'
@@ -94,33 +95,61 @@ def locate_table(page_id: str, driver):
 def locate_button(n, driver):
     wait = WebDriverWait(driver, 3)
     template_page_id = 'dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_'
-    if n <= 11:
-        page_id = template_page_id + str(n)
-        if page_id != "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1":
-            link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
-            link_element.click()
-    else:
-        # Write the algorithm here
-        x = n-5
-        button_11_pressed = math.floor(x/5)
-        if n <= 926:
-            last_button = (x%5)+5
-        elif n == 930:
-            last_button = 11
-        else:
-            last_button = (x%5)+6
-
-        if (x % 5 == 0) and n!= 930:
-            button_11_pressed-=1
-            last_button+=5
-
-        for i in range(button_11_pressed):
-            link_element = wait.until(EC.element_to_be_clickable((By.ID, "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_11")))
+    arr = compute_button(n)
+    # [0, 4, 1] approach 1: press button 11 0 times, press id 4
+    # [5, 3, 2] approach 2: press button 12, then press button 1 5 times, then press id 3
+    if arr[2] == 1:
+        for i in range(arr[0]):
+            link_element = wait.until(EC.element_to_be_clickable((By.ID, template_page_id+str(11))))
             link_element.click()
             time.sleep(1) 
-        last_page_id =  template_page_id + str(last_button)
-        link_element = wait.until(EC.element_to_be_clickable((By.ID, last_page_id)))
+        # press id arr[1]
+        link_element = wait.until(EC.element_to_be_clickable((By.ID, template_page_id + str(arr[1]))))
         link_element.click()
+        time.sleep(1) 
+    else:
+        # press button 12
+        link_element = wait.until(EC.element_to_be_clickable((By.ID, template_page_id+str(12))))
+        link_element.click()
+        time.sleep(1) 
+        # press button 1 arr[0] times
+        for i in range(arr[0]):
+            link_element = wait.until(EC.element_to_be_clickable((By.ID, template_page_id+str(1))))
+            link_element.click()
+            time.sleep(1) 
+        # press id arr[1]
+        link_element = wait.until(EC.element_to_be_clickable((By.ID, template_page_id + str(arr[1]))))
+        link_element.click()
+        time.sleep(1) 
+        
+
+    # if n <= 11:
+    #     page_id = template_page_id + str(n)
+    #     if page_id != "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_1":
+    #         link_element = wait.until(EC.element_to_be_clickable((By.ID, page_id)))
+    #         link_element.click()
+    # else:
+    #     # Write the algorithm here
+    #     x = n-5
+    #     button_11_pressed = math.floor(x/5)
+    #     if n <= 926:
+    #         last_button = (x%5)+5
+    #     elif n == 930:
+    #         last_button = 11
+    #     else:
+    #         last_button = (x%5)+6
+
+    #     if (x % 5 == 0) and n!= 930:
+    #         button_11_pressed-=1
+    #         last_button+=5
+
+    #     for i in range(button_11_pressed):
+    #         link_element = wait.until(EC.element_to_be_clickable((By.ID, "dnn_ctr422_TimKiemGPHD_rptPager_lnkPage_11")))
+    #         link_element.click()
+    #         time.sleep(1) 
+    #     last_page_id =  template_page_id + str(last_button)
+    #     link_element = wait.until(EC.element_to_be_clickable((By.ID, last_page_id)))
+    #     link_element.click()
 
 
 def search_from_license(key, value):
@@ -202,6 +231,10 @@ def process_license_dict_in_parallel(license_dict, num_processes=4):
             print("License dictionary is empty or not loaded properly.")
 
 if __name__ == '__main__':
-    scrape_license_parallel(25)
+     scrape_license_page(884) 
+
+    #  scrape_license_page(62) #47??
+
+    # scrape_license_parallel(25)
     # license_dict = license_to_dict()
     # process_license_dict_in_parallel(license_dict)
