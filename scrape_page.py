@@ -49,7 +49,8 @@ def scrape_table(page_source: str, hospital_info: str, wait) -> list[str]:
         for row in table_rows:
             row_data = process_row(row, hospital_info)
             last_row_data = row_data  # Update last_row_data with the current row data
-        return last_row_data  # Return the last row data after the loop
+        if last_row_data is not None:
+            return int(last_row_data[3])  # Return the last row data after the loop
     except Exception as error:
-        print("An exception occurred:", error)
+        print("An exception occurred in scrape_page:", error)
         return None  # Return None in case of an exception

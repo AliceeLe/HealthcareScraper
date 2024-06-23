@@ -22,16 +22,45 @@ license_click_id = 'dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_0'
 doctor_id = "dnn_ctr422_TimKiemGPHD_UpdatePanel1"
 next_button_id = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_2"
 
-# def evaluate_to_turn_page(page_source, value, wait):
-#     processed_row_data = scrape_table(page_source, value, wait)
-#     num_worker_in_page = int(processed_row_data[3])
-#     return processed_row_data is not None and num_worker_in_page % 100 == 0
 
-# def turn_page(page_source, value, wait):
-#     turn = evaluate_to_turn_page(page_source, value, wait)
-#     while turn:
-#         # function to turn page 
-#         pass
+def turn_page(page_source, value, wait, driver):
+    last_num = scrape_table(page_source, value, wait)
+    while last_num is not None and last_num % 100 == 0:
+        try:
+            print("New page turned")
+            num_page = math.floor(last_num/100)
+            id_next_page = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_"+str(num_page+1)
+            print(id_next_page)
+            # Click the checkbox before scrolling down
+            checkbox = driver.find_element(By.ID, 'chkDSNhanSu')
+            if not checkbox.is_selected():
+                checkbox.click()
+            time.sleep(1)  # Wait for any dynamic content to load
+            print("Click checkbox")
+
+            # Scroll down to find next_button_id
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(1)  # Wait for the page to load and the element to appear
+
+            # Ensure the element is in view
+            next_button = driver.find_element(By.ID, id_next_page)
+            driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
+            time.sleep(1)  # Give time for any dynamic content to load
+
+            link_element = wait.until(EC.element_to_be_clickable((By.ID, id_next_page)))
+            link_element.click()
+            print("Click next button")
+            time.sleep(2) 
+
+            page_source = driver.page_source 
+            # Call the function to scrape info of the new page after clicked. But still scrape info of 
+            # first page
+            last_num = scrape_table(page_source, value, wait)
+        except TimeoutException:
+            print(f"Element was not found within 10 seconds.")
+        except Exception as e:
+            print(f"An error occurred in turn_page: {e}")
+
 
 def search_from_license(key, value):
     driver = webdriver.Chrome()
@@ -48,7 +77,7 @@ def search_from_license(key, value):
         
         submit_button = driver.find_element(By.ID, button_search_id)
         submit_button.click()
-        time.sleep(2)
+        time.sleep(1)
         
         try:
             link_element = wait.until(EC.element_to_be_clickable((By.ID, hospital_id)))
@@ -58,43 +87,44 @@ def search_from_license(key, value):
         time.sleep(2)
         
         page_source = driver.page_source 
-        processed_row_data = scrape_table(page_source, value, wait)
-        if processed_row_data is not None and int(processed_row_data[3])  % 100 == 0:
-            try:
-                print("New page turned")
-                num_page = math.floor(int(processed_row_data[3])/100)
-                id_next_page = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_"+str(num_page+1)
-                print(id_next_page)
-                # Click the checkbox before scrolling down
-                checkbox = driver.find_element(By.ID, 'chkDSNhanSu')
-                if not checkbox.is_selected():
-                    checkbox.click()
-                time.sleep(1)  # Wait for any dynamic content to load
-                print("Click checkbox")
+        turn_page(page_source, value, wait, driver)
+        # last_num = scrape_table(page_source, value, wait)
+        # if last_num is not None and last_num  % 100 == 0:
+        #     try:
+        #         print("New page turned")
+        #         num_page = math.floor(last_num/100)
+        #         id_next_page = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_"+str(num_page+1)
+        #         print(id_next_page)
+        #         # Click the checkbox before scrolling down
+        #         checkbox = driver.find_element(By.ID, 'chkDSNhanSu')
+        #         if not checkbox.is_selected():
+        #             checkbox.click()
+        #         time.sleep(1)  # Wait for any dynamic content to load
+        #         print("Click checkbox")
 
-                # Scroll down to find next_button_id
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(2)  # Wait for the page to load and the element to appear
+        #         # Scroll down to find next_button_id
+        #         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        #         time.sleep(2)  # Wait for the page to load and the element to appear
 
-                # Ensure the element is in view
-                next_button = driver.find_element(By.ID, id_next_page)
-                driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
-                time.sleep(2)  # Give time for any dynamic content to load
+        #         # Ensure the element is in view
+        #         next_button = driver.find_element(By.ID, id_next_page)
+        #         driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
+        #         time.sleep(2)  # Give time for any dynamic content to load
 
-                link_element = wait.until(EC.element_to_be_clickable((By.ID, id_next_page)))
-                link_element.click()
-                print("Click next button")
-                time.sleep(2) 
+        #         link_element = wait.until(EC.element_to_be_clickable((By.ID, id_next_page)))
+        #         link_element.click()
+        #         print("Click next button")
+        #         time.sleep(2) 
 
-                page_source = driver.page_source 
-                # Call the function to scrape info of the new page after clicked. But still scrape info of 
-                # first page
-                processed_row_data = scrape_table(page_source, value, wait)
-                print(processed_row_data)
-            except TimeoutException:
-                print(f"Element was not found within 10 seconds.")
-            except Exception as e:
-                print(f"An error occurred: {e}")
+        #         page_source = driver.page_source 
+        #         # Call the function to scrape info of the new page after clicked. But still scrape info of 
+        #         # first page
+        #         processed_row_data = scrape_table(page_source, value, wait)
+        #         print(processed_row_data)
+        #     except TimeoutException:
+        #         print(f"Element was not found within 10 seconds.")
+        #     except Exception as e:
+        #         print(f"An error occurred: {e}")
 
     finally:
         driver.quit()
@@ -134,7 +164,7 @@ def process_license_dict_in_parallel(license_dict, num_processes=4):
 
 if __name__ == '__main__':
     #  scrape_license_page(10) 
-    scrape_license_parallel(10)
+    scrape_license_parallel(2)
     license_dict = license_to_dict()
     process_license_dict_in_parallel(license_dict)
 
