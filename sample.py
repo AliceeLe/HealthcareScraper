@@ -19,6 +19,7 @@ button_search_id = 'dnn_ctr422_TimKiemGPHD_btnSearchGPHN'
 hospital_id = 'dnn_ctr422_TimKiemGPHD_grvGPHN_btnTenCoSo_0'
 license_click_id = 'dnn_ctr422_TimKiemGPHD_grvGPHN_btnSoGiayPhep_0'
 doctor_id = "dnn_ctr422_TimKiemGPHD_UpdatePanel1"
+next_button_id = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_2"
 
 def clean_name_role(a_content: str, row_data: list[str]):
     index = a_content.find('\n')
@@ -42,23 +43,26 @@ def process_row(row, hospital_info):
             clean_name_role(a_content, row_data)
         else:
             row_data.append(column.get_text(strip=True))
-    # if row_data[3] > 100: turn page 
     with open('output.csv', 'a') as file:
         writer = csv.writer(file)
-        writer.writerow(row_data)
+        writer.writerow(row_data)        
+    return row_data
 
-def scrape_table(page_source: str, hospital_info: str) -> None:
+def scrape_table(page_source: str, hospital_info: str, wait) -> list[str]:
     try:
-        # BUG from 50-53
         time.sleep(3)
         soup = BeautifulSoup(page_source, 'html.parser')
         doctors_content = soup.find('div', id=doctor_id)    
         table_rows = doctors_content.find_all('tr', style="color:#003399;background-color:White;")
 
+        last_row_data = None  # Initialize last_row_data
         for row in table_rows:
-            process_row(row, hospital_info)
+            row_data = process_row(row, hospital_info)
+            last_row_data = row_data  # Update last_row_data with the current row data
+        return last_row_data  # Return the last row data after the loop
     except Exception as error:
-        print("An exception occurred:", error) 
+        print("An exception occurred:", error)
+        return None  # Return None in case of an exception
 
 def locate_table(page_id: str, driver):
     page_source = driver.page_source
@@ -121,7 +125,7 @@ def search_from_license(key, value):
         print("________")
         print(key)
         driver.get(url)
-        wait = WebDriverWait(driver, 3)
+        wait = WebDriverWait(driver, 10)
         
         input_field = driver.find_element(By.ID, input_search_id)
         input_field.clear()
@@ -140,7 +144,46 @@ def search_from_license(key, value):
         time.sleep(2)
         
         page_source = driver.page_source 
-        scrape_table(page_source, value)
+        processed_row_data = scrape_table(page_source, value, wait)
+        print(processed_row_data)
+        num_worker_in_page = int(processed_row_data[3])
+        if processed_row_data is not None and num_worker_in_page % 100 == 0:
+            try:
+                print("New page turned")
+                num_page = math.floor(num_worker_in_page/100)
+                id_next_page = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_"+str(num_page+1)
+                print(id_next_page)
+                # Click the checkbox before scrolling down
+                checkbox = driver.find_element(By.ID, 'chkDSNhanSu')
+                if not checkbox.is_selected():
+                    checkbox.click()
+                time.sleep(1)  # Wait for any dynamic content to load
+                print("Click checkbox")
+
+                # Scroll down to find next_button_id
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(2)  # Wait for the page to load and the element to appear
+
+                # Ensure the element is in view
+                next_button = driver.find_element(By.ID, id_next_page)
+                driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
+                time.sleep(2)  # Give time for any dynamic content to load
+
+                link_element = wait.until(EC.element_to_be_clickable((By.ID, id_next_page)))
+                link_element.click()
+                print("Click next button")
+                time.sleep(2) 
+
+                page_source = driver.page_source 
+                # Call the function to scrape info of the new page after clicked. But still scrape info of 
+                # first page
+                processed_row_data = scrape_table(page_source, value, wait)
+                print(processed_row_data)
+            except TimeoutException:
+                print(f"Element was not found within 10 seconds.")
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
     finally:
         driver.quit()
 
@@ -194,10 +237,9 @@ def process_license_dict_in_parallel(license_dict, num_processes=4):
             print("License dictionary is empty or not loaded properly.")
 
 if __name__ == '__main__':
-     scrape_license_page(102) 
+    #  scrape_license_page(2) 
+     license_dict = license_to_dict()
+     process_license_dict_in_parallel(license_dict)
 
-    #  scrape_license_page(62) #47??
 
     # scrape_license_parallel(25)
-    # license_dict = license_to_dict()
-    # process_license_dict_in_parallel(license_dict)
