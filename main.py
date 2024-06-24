@@ -98,6 +98,14 @@ def scrape_license_parallel(page_start, page_end):
             pool.map(scrape_license_page, page_numbers)
         print(f"Scraping completed for pages {page_start} to {page_end}")
 
+def scrape_license_missing_array():
+    if __name__ == '__main__':
+        # modify this part
+        page_numbers = [302, 330, 344, 359, 374, 456, 457, 458, 469, 470, 471, 472, 473, 474, 483, 484, 485, 486, 487, 488, 489, 490, 497, 498, 499, 500]
+        with multiprocessing.Pool(processes=4) as pool:
+            pool.map(scrape_license_page, page_numbers)
+        print(f"Scraping completed for missing array")
+
 def license_to_dict():
     try:
         df = pd.read_csv("license_new.csv")
@@ -124,7 +132,8 @@ def process_license_dict_in_parallel(license_dict, num_processes=4):
             print("License dictionary is empty or not loaded properly.")
 
 if __name__ == '__main__':
-    scrape_license_parallel(251, 500)
+    scrape_license_parallel(501, 600)
+    scrape_license_missing_array()
     # license_dict = license_to_dict()
     # process_license_dict_in_parallel(license_dict)
 

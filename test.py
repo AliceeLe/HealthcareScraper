@@ -5,13 +5,24 @@ def reorganize_csv():
         # Load the CSV file
         df = pd.read_csv("license_new.csv")
         
-        # Sort the DataFrame by the first column (index 0)
-        df_sorted = df.sort_values(by=df.columns[0], ascending=True)
+        # Extract the first column
+        first_column = df.iloc[:, 0]
         
-        # Save the sorted DataFrame back to a CSV file (optional)
-        df_sorted.to_csv("license_new_sorted.csv", index=False)
+        # Define the range of values to check
+        required_values = set(range(1, 600))
         
-        return df_sorted
+        # Get the unique values from the first column
+        column_values = set(first_column.unique())
+        
+        # Check for missing values
+        missing_values = required_values - column_values
+        
+        if missing_values:
+            print(f"Missing values: {sorted(missing_values)}")
+        else:
+            print("All values from 1 to 500 are present in the first column.")
+        
+        return missing_values
     except FileNotFoundError:
         print(f"The file was not found.")
     except pd.errors.EmptyDataError:
@@ -20,6 +31,4 @@ def reorganize_csv():
         print(f"An error occurred: {e}")
 
 # Example usage
-sorted_df = reorganize_csv()
-if sorted_df is not None:
-    print(sorted_df)
+missing_values = reorganize_csv()
