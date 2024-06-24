@@ -53,8 +53,6 @@ def turn_page(page_source, value, wait, driver):
             time.sleep(2) 
 
             page_source = driver.page_source 
-            # Call the function to scrape info of the new page after clicked. But still scrape info of 
-            # first page
             last_num = scrape_table(page_source, value, wait)
         except TimeoutException:
             print(f"Element was not found within 10 seconds.")
@@ -87,60 +85,23 @@ def search_from_license(key, value):
         time.sleep(2)
         
         page_source = driver.page_source 
-        turn_page(page_source, value, wait, driver)
-        # last_num = scrape_table(page_source, value, wait)
-        # if last_num is not None and last_num  % 100 == 0:
-        #     try:
-        #         print("New page turned")
-        #         num_page = math.floor(last_num/100)
-        #         id_next_page = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_"+str(num_page+1)
-        #         print(id_next_page)
-        #         # Click the checkbox before scrolling down
-        #         checkbox = driver.find_element(By.ID, 'chkDSNhanSu')
-        #         if not checkbox.is_selected():
-        #             checkbox.click()
-        #         time.sleep(1)  # Wait for any dynamic content to load
-        #         print("Click checkbox")
-
-        #         # Scroll down to find next_button_id
-        #         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        #         time.sleep(2)  # Wait for the page to load and the element to appear
-
-        #         # Ensure the element is in view
-        #         next_button = driver.find_element(By.ID, id_next_page)
-        #         driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
-        #         time.sleep(2)  # Give time for any dynamic content to load
-
-        #         link_element = wait.until(EC.element_to_be_clickable((By.ID, id_next_page)))
-        #         link_element.click()
-        #         print("Click next button")
-        #         time.sleep(2) 
-
-        #         page_source = driver.page_source 
-        #         # Call the function to scrape info of the new page after clicked. But still scrape info of 
-        #         # first page
-        #         processed_row_data = scrape_table(page_source, value, wait)
-        #         print(processed_row_data)
-        #     except TimeoutException:
-        #         print(f"Element was not found within 10 seconds.")
-        #     except Exception as e:
-        #         print(f"An error occurred: {e}")
+        scrape_table(page_source, value, wait)
 
     finally:
         driver.quit()
 
 
-def scrape_license_parallel(num_pages):
+def scrape_license_parallel(page_start, page_end):
     if __name__ == '__main__':
-        page_numbers = list(range(1, num_pages + 1))
+        page_numbers = list(range(page_start, page_end + 1))
         with multiprocessing.Pool(processes=4) as pool:
             pool.map(scrape_license_page, page_numbers)
-        print(f"Scraping completed for pages 1 to {num_pages}")
+        print(f"Scraping completed for pages {page_start} to {page_end}")
 
 def license_to_dict():
     try:
-        df = pd.read_csv("license.csv")
-        key_value_dict = pd.Series(df.iloc[:, 1].values, index=df.iloc[:, 0]).to_dict()
+        df = pd.read_csv("license_new.csv")
+        key_value_dict = pd.Series(df.iloc[:, 2].values, index=df.iloc[:, 1]).to_dict()
         return key_value_dict
     except FileNotFoundError:
         print(f"The file was not found.")
@@ -163,10 +124,7 @@ def process_license_dict_in_parallel(license_dict, num_processes=4):
             print("License dictionary is empty or not loaded properly.")
 
 if __name__ == '__main__':
-    #  scrape_license_page(10) 
-    scrape_license_parallel(2)
-    license_dict = license_to_dict()
-    process_license_dict_in_parallel(license_dict)
+    scrape_license_parallel(251, 500)
+    # license_dict = license_to_dict()
+    # process_license_dict_in_parallel(license_dict)
 
-
-    # scrape_license_parallel(25)

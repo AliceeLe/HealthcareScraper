@@ -79,9 +79,9 @@ def scrape_license_page(n):
         table_dict = locate_table(n, driver)
         
         for key, value in table_dict.items():
-            with open("license.csv", "a") as outfile:
+            with open("license_new.csv", "a") as outfile:
                 writer = csv.writer(outfile)
-                writer.writerow([key, value])
+                writer.writerow([n, key, value])
     except TimeoutException:
         print(f"Element was not found within 10 seconds.")
     finally:
