@@ -106,13 +106,23 @@ def scrape_license_missing_array():
             pool.map(scrape_license_page, page_numbers)
         print(f"Scraping completed for missing array")
 
-def license_to_dict():
+def license_to_dict(row_start, row_end):
     try:
-        df = pd.read_csv("license_new.csv")
-        key_value_dict = pd.Series(df.iloc[:, 2].values, index=df.iloc[:, 1]).to_dict()
+        # Read the CSV file
+        df = pd.read_csv("license.csv")
+        
+        # Slice the DataFrame from row_start to row_end (inclusive)
+        # Adjust slicing to consider Python's zero-indexing
+        sliced_df = df.iloc[row_start:row_end+1]
+        
+        # Create a dictionary from the sliced DataFrame
+        # Assuming second column is used as keys (index) and third column as values
+        key_value_dict = pd.Series(sliced_df.iloc[:, 2].values, index=sliced_df.iloc[:, 1]).to_dict()
+        
         return key_value_dict
+
     except FileNotFoundError:
-        print(f"The file was not found.")
+        print("The file was not found.")
     except pd.errors.EmptyDataError:
         print("No data in the CSV file.")
     except Exception as e:
@@ -132,8 +142,8 @@ def process_license_dict_in_parallel(license_dict, num_processes=4):
             print("License dictionary is empty or not loaded properly.")
 
 if __name__ == '__main__':
-    scrape_license_parallel(501, 600)
-    scrape_license_missing_array()
-    # license_dict = license_to_dict()
-    # process_license_dict_in_parallel(license_dict)
+    # scrape_license_parallel(501, 600)
+    # scrape_license_missing_array()
+    license_dict = license_to_dict(1, 10)
+    process_license_dict_in_parallel(license_dict)
 

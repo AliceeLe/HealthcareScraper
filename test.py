@@ -1,15 +1,15 @@
 import pandas as pd
 
-def reorganize_csv():
+def check_missing():
     try:
         # Load the CSV file
-        df = pd.read_csv("license_new.csv")
+        df = pd.read_csv("license.csv")
         
         # Extract the first column
         first_column = df.iloc[:, 0]
         
         # Define the range of values to check
-        required_values = set(range(1, 600))
+        required_values = set(range(1, 930))
         
         # Get the unique values from the first column
         column_values = set(first_column.unique())
@@ -30,5 +30,15 @@ def reorganize_csv():
     except Exception as e:
         print(f"An error occurred: {e}")
 
-# Example usage
-missing_values = reorganize_csv()
+def reorganize_csv():
+    df = pd.read_csv("license.csv")
+
+    df = df.sort_values(by=df.columns[0])
+
+    df = df.drop_duplicates()
+
+    df.to_csv('license_sorted.csv', index=False)
+
+    print("Finish sorting")
+
+reorganize_csv()
