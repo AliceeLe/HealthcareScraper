@@ -136,27 +136,27 @@ def organize_and_save_csv():
     try:
         # Load the CSV file
         df = pd.read_csv("src/csv/output.csv")   
-        
+        print("Column names:", df.columns)
+
         # # Convert the first (Page) and second (Button) columns to numeric, if they're not already
-        # df.iloc[:, 0] = pd.to_numeric(df.iloc[:, 0], errors='coerce')
-        # df.iloc[:, 1] = pd.to_numeric(df.iloc[:, 1], errors='coerce')
-        
-        # Remove duplicate rows based on all columns
+        df.iloc[:, 0] = pd.to_numeric(df.iloc[:, 0], errors='coerce')
+        df.iloc[:, 1] = pd.to_numeric(df.iloc[:, 1], errors='coerce')
+        df.iloc[:, 4] = pd.to_numeric(df.iloc[:, 4], errors='coerce')
+
         df = df.drop_duplicates()
         
-        # Sort by the first (Page) and second (Button) columns
-        df_sorted = df.sort_values(by=['Button'], inplace=True, axis=1)
+        df_sorted = df.sort_values(['Page', 'Button', 'STT'], ascending=True)
         
         # Write the organized DataFrame to a new CSV file
-        df.to_csv("src/csv/output_organized.csv", index=False)
+        df_sorted.to_csv("src/csv/output_organized.csv", index=False)
         print(f"Data has been organized and saved to output_organized.csv")
         
     except FileNotFoundError:
         print(f"The file was not found.")
     except pd.errors.EmptyDataError:
         print("No data in the CSV file.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    # except Exception as e:
+    #     print(f"An error occurred: {e}")
 
 # addresses = extract_addresses()
 # missing = check_missing_output(addresses)
@@ -197,4 +197,4 @@ def save_rows_with_100_in_fourth_column():
         print(f"An error occurred: {e}")
         return 0
 
-save_rows_with_100_in_fourth_column()
+# save_rows_with_100_in_fourth_column()

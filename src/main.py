@@ -23,13 +23,14 @@ doctor_id = "dnn_ctr422_TimKiemGPHD_UpdatePanel1"
 next_button_id = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_2"
 
 
-def turn_page(page_source, value, wait, driver):
-    last_num = scrape_table(page_source, value, wait)
-    while last_num is not None and last_num % 100 == 0:
+def turn_page(page_source, value, wait, driver, num):
+    # last_num = scrape_table(page_source, value, wait)
+    # while last_num is not None and last_num % 100 == 0:
         try:
             print("New page turned")
-            num_page = math.floor(last_num/100)
-            id_next_page = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_"+str(num_page+1)
+            # num_page = math.floor(last_num/100)
+            id_11 = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_11" 
+            id_next_page = "dnn_ctr422_TimKiemGPHD_rptPagerNhanSu_lnkPageNhanSu_" + str(num)
             print(id_next_page)
             # Click the checkbox before scrolling down
             checkbox = driver.find_element(By.ID, 'chkDSNhanSu')
@@ -47,13 +48,18 @@ def turn_page(page_source, value, wait, driver):
             driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
             time.sleep(1)  # Give time for any dynamic content to load
 
+            # link_element = wait.until(EC.element_to_be_clickable((By.ID, id_11)))
+            # link_element.click()
+            # print("Click next button")
+            # time.sleep(2) 
+
             link_element = wait.until(EC.element_to_be_clickable((By.ID, id_next_page)))
             link_element.click()
             print("Click next button")
             time.sleep(2) 
 
             page_source = driver.page_source 
-            last_num = scrape_table(page_source, value, wait)
+            scrape_table(page_source, value, wait)
         except TimeoutException:
             print(f"Element was not found within 10 seconds.")
         except Exception as e:
@@ -85,7 +91,20 @@ def search_from_license(key, value):
         time.sleep(2)
         
         page_source = driver.page_source 
-        scrape_table(page_source, value, wait)
+        try:
+            # turn_page(page_source, value, wait, driver, 2)
+            # turn_page(page_source, value, wait, driver, 3)
+            # turn_page(page_source, value, wait, driver, 4)
+            # turn_page(page_source, value, wait, driver, 5)
+            # # turn_page(page_source, value, wait, driver, 6)
+            # for i in range(8):
+            #     turn_page(page_source, value, wait, driver, 7)
+            turn_page(page_source, value, wait, driver, 8)
+            # turn_page(page_source, value, wait, driver, 9)
+            # turn_page(page_source, value, wait, driver, 10)
+            # turn_page(page_source, value, wait, driver, 11)
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
     finally:
         driver.quit()
@@ -155,8 +174,11 @@ if __name__ == '__main__':
     # scrape_license_parallel(501, 600)
     # scrape_license_missing_array()
     try:
-        license_dict = license_to_dict(1001, 2113)
-        process_license_dict_in_parallel(license_dict)
+        key = "351/BYT-GPHĐ"
+        value = "['877','9', 'Bệnh viện Đa khoa Tâm Anh Quận 8', '316C Phạm Hùng, Phường 5, Quận 8, TP Hồ Chí Minh']"
+        search_from_license(key, value)
+        # license_dict = license_to_dict(1001, 2113)
+        # process_license_dict_in_parallel(license_dict)
     except Exception as e:
         print(f"An error occurred in main: {e}")
 

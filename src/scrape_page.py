@@ -33,7 +33,7 @@ def process_row(row, hospital_info):
             clean_name_role(a_content, row_data)
         else:
             row_data.append(column.get_text(strip=True))
-    with open('output.csv', 'a') as file:
+    with open('src/csv/output.csv', 'a') as file:
         writer = csv.writer(file)
         writer.writerow(row_data)        
     return row_data
