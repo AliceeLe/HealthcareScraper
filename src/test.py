@@ -224,7 +224,7 @@ def check_10():
     res = []
     # Print the incomplete license_ids
     if incomplete_license_ids:
-        print("Store page_ids do not have exactly 10 rows:")
+        print("Store page nums do not have exactly 10 rows:")
         for license_id in incomplete_license_ids:
             res.append(license_id)
         print(len(res))
@@ -250,4 +250,22 @@ def clean_repeating_rows():
     
     print(f"Duplicate rows removed and cleaned CSV file saved to")
 
-check_10()
+def clean_output():
+    """
+    Deletes repeating rows based on the same values in two columns in a CSV file in place.
+    
+    Parameters:
+    - file_path: str, path to the CSV file to be cleaned
+    """
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv('src/csv/output.csv')
+
+    # Drop duplicate rows based on two columns
+    df_unique = df.drop_duplicates(subset=['Họ tên', 'Tên cơ sở'], keep='first')
+
+    # Save the cleaned DataFrame back to the CSV file
+    df_unique.to_csv('src/csv/output.csv', index=False)
+    
+    print("Duplicate rows removed and cleaned CSV file saved to 'src/csv/output.csv'")
+
+create_excel()

@@ -90,9 +90,7 @@ def search_from_license(key, value):
             link_element = wait.until(EC.element_to_be_clickable((By.ID, license_click_id)))
         link_element.click()
         time.sleep(2)
-        
-        page_source = driver.page_source 
-        try:
+        # try:
             # turn_page(page_source, value, wait, driver, 2)
             # turn_page(page_source, value, wait, driver, 3)
             # turn_page(page_source, value, wait, driver, 4)
@@ -100,12 +98,15 @@ def search_from_license(key, value):
             # # turn_page(page_source, value, wait, driver, 6)
             # for i in range(8):
             #     turn_page(page_source, value, wait, driver, 7)
-            turn_page(page_source, value, wait, driver, 8)
+            # turn_page(page_source, value, wait, driver, 8)
             # turn_page(page_source, value, wait, driver, 9)
             # turn_page(page_source, value, wait, driver, 10)
             # turn_page(page_source, value, wait, driver, 11)
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        # except Exception as e:
+        #     print(f"An error occurred: {e}")
+
+        page_source = driver.page_source 
+        scrape_table(page_source, value, wait)
 
     finally:
         driver.quit()
@@ -129,7 +130,7 @@ def scrape_license_missing_array():
 def license_to_dict(row_start, row_end):
     try:
         # Read the CSV file
-        df = pd.read_csv("missing.csv", header=None)
+        df = pd.read_csv("src/csv/license_sorted.csv", header=None)
         
         # Slice the DataFrame from row_start to row_end (inclusive)
         sliced_df = df.iloc[row_start:row_end+1]
@@ -173,13 +174,13 @@ def process_license_dict_in_parallel(license_dict, num_processes=4):
 if __name__ == '__main__':
     try:
         # scrape_license_parallel(922, 932)
-        scrape_license_missing_array()
+        # scrape_license_missing_array()
 
         # key = "351/BYT-GPHĐ"
         # value = "['877','9', 'Bệnh viện Đa khoa Tâm Anh Quận 8', '316C Phạm Hùng, Phường 5, Quận 8, TP Hồ Chí Minh']"
         # search_from_license(key, value)
-        # license_dict = license_to_dict(1001, 2113)
-        # process_license_dict_in_parallel(license_dict)
+        license_dict = license_to_dict(7671, 9256)
+        process_license_dict_in_parallel(license_dict)
     except Exception as e:
         print(f"An error occurred in main: {e}")
 
