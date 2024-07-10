@@ -22,11 +22,11 @@ def approach_2(n:int)->list[int]:
     # 1st elem: number of times to press button 1
     # 2nd elemn: last button pressed
     res = []
-    if n >= 920:
+    if n >= 922:
         res.append(0)
-        res.append(n+1-920)
+        res.append(n+1-922)
     else: 
-        x = 930 - n - 5
+        x = 932 - n - 5
         button_1_times = math.floor(x/5)
         last_button = (x % 5)
         res.append(button_1_times)

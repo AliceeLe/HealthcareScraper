@@ -37,8 +37,8 @@ def locate_table(page_id: str, driver):
             license = column_data[2]
             if len(license) > 14:
                 license = license[:14]
-            elif len(license) < 14:
-                continue
+            # elif len(license) < 14:
+            #     continue
             row_data = []
             row_data.append(column_data[0])
             row_data.append(column_data[1])
@@ -79,7 +79,7 @@ def scrape_license_page(n):
         table_dict = locate_table(n, driver)
         
         for key, value in table_dict.items():
-            with open("src/csv/license.csv", "a") as outfile:
+            with open("src/csv/license_sorted.csv", "a") as outfile:
                 writer = csv.writer(outfile)
                 writer.writerow([n, key, value])
     except TimeoutException:

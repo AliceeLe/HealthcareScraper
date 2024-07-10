@@ -1,6 +1,17 @@
 import pandas as pd
 import csv
 import ast
+from openpyxl import Workbook
+import csv
+
+def create_excel():
+    wb = Workbook()
+    ws = wb.active
+    with open('src/csv/output_organized.csv', 'r') as f:
+        for row in csv.reader(f):
+            ws.append(row)
+    wb.save('medinet.xlsx')
+
 
 def check_missing():
     try:
@@ -161,7 +172,7 @@ def organize_and_save_csv():
 # addresses = extract_addresses()
 # missing = check_missing_output(addresses)
 # filter_and_save_rows(missing)
-organize_and_save_csv()
+# organize_and_save_csv()
 # reorganize_csv()
 
 
@@ -198,3 +209,45 @@ def save_rows_with_100_in_fourth_column():
         return 0
 
 # save_rows_with_100_in_fourth_column()
+
+def check_10():
+    file_path = 'src/csv/license_sorted.csv'  # Replace with the path to your CSV file
+    df = pd.read_csv(file_path)
+    print("Columns in the DataFrame:", df.columns.tolist())
+
+    # Count the number of rows for each license_id
+    license_counts = df["page_num"].value_counts()
+
+    # Filter license_ids that do not have 10 rows
+    incomplete_license_ids = license_counts[license_counts != 10].index.tolist()
+
+    res = []
+    # Print the incomplete license_ids
+    if incomplete_license_ids:
+        print("Store page_ids do not have exactly 10 rows:")
+        for license_id in incomplete_license_ids:
+            res.append(license_id)
+        print(len(res))
+        res.sort()
+        print(res)
+        return res
+    else:
+        print("All license_ids have exactly 10 rows.")
+
+def clean_repeating_rows():
+    """
+    Deletes repeating rows in a CSV file in place.
+    
+    Parameters:
+    - file_path: str, path to the CSV file to be cleaned
+    """
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv('src/csv/license_sorted.csv')
+
+    df_unique = df.drop_duplicates(subset='license_id', keep='last')
+
+    df_unique.to_csv('src/csv/license_sorted.csv', index=False)
+    
+    print(f"Duplicate rows removed and cleaned CSV file saved to")
+
+check_10()
